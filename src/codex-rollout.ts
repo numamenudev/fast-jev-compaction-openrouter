@@ -47,7 +47,15 @@ function append(messages: Message[], payload: unknown): void {
   if (outputTypes.has(item.type)) {
     const output = item.output;
     const text = typeof output === 'string' ? output : (JSON.stringify(output) ?? '');
-    messages.push({ role: 'user', text: '', toolUses: [], toolResults: [{ tool_use_id: callId, text }] });
+    const success = item.success ?? (output && typeof output === 'object' && 'success' in output
+      ? output.success
+      : undefined);
+    messages.push({
+      role: 'user',
+      text: '',
+      toolUses: [],
+      toolResults: [{ tool_use_id: callId, text, isError: success === false }],
+    });
   }
 }
 

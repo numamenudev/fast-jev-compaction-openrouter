@@ -32,7 +32,7 @@ are rejected. Use an OpenRouter workspace with ZDR enforced in its privacy
 settings or through a guardrail as well.
 
 Jev receives user and assistant text plus tool inputs from the active rollout
-history. Tool results are represented by status and character counts. The
+history. Structured tool results are represented by status and character counts. The native summary can include prior tool details. The
 configured OpenRouter key is checked against the transcript before requests.
 Other sensitive content can still be present in prompts and tool arguments.
 Enable this integration only for sessions you are authorized to send to
@@ -40,8 +40,9 @@ OpenRouter.
 
 Selected tool evidence is temporarily stored under
 `$CODEX_HOME/fast-jev-openrouter-cache` with directory mode `0700` and file
-mode `0600`. Each checkpoint is consumed once, expires after two minutes and
-is swept on the next enabled compaction. Codex receives the restored evidence
+mode `0600`. Each checkpoint is consumed once, expires after ten minutes and
+is swept on the next enabled compaction. After manual compaction, Codex runs the
+restore hook when you send your next message. Codex receives the restored evidence
 as additional context for the current session. Retention of that context in
 Codex follows the host's behavior.
 
@@ -49,4 +50,4 @@ A missing key, unsupported rollout, request error or exhausted request budget
 leaves the native flow running. The rollout JSONL format is a Codex
 implementation detail and can change. The default engine preserves the first
 and six most recent messages. Restoration favors recent tool exchanges and
-skips entries that exceed the remaining context budget.
+uses head and tail excerpts for oversized entries when space remains.

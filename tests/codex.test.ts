@@ -11,7 +11,11 @@ const records = [
   { type: 'compacted', payload: { replacement_history: [message('CURRENT').payload] } },
   ...['keep', 'drop'].flatMap((name) => [
     item({ type: 'function_call', call_id: name, name, arguments: '{}' }),
-    item({ type: 'function_call_output', call_id: name, output: `OUTPUT_${name}` }),
+    item({
+      type: 'function_call_output',
+      call_id: name,
+      output: name === 'keep' ? 'OUTPUT_keep' + 'x'.repeat(16_000) + 'KEEP_TAIL' : 'OUTPUT_drop',
+    }),
   ]),
   ...Array.from({ length: 6 }, (_, index) => message(`Recent prompt ${index}`)),
 ];
@@ -43,6 +47,8 @@ test('restores selected evidence once after native compaction', async () => {
     expect((await stat(cache)).mode & 0o777).toBe(0o700);
     const context = JSON.stringify(await runHook(restore, options));
     expect(context).toContain('OUTPUT_keep');
+    expect(context).toContain('KEEP_TAIL');
+    expect(context).toContain('shortened');
     expect(context).not.toMatch(/OUTPUT_drop|CURRENT/);
     expect(await runHook(restore, options)).toEqual({});
     expect(await readFile(transcript, 'utf8')).toContain('STALE');
@@ -62,6 +68,24 @@ test('leaves native compaction running when OpenRouter rejects the request', asy
     expect(await runHook({ ...event, hook_event_name: 'PreCompact' }, options)).toEqual({});
     expect(fetcher).toHaveBeenCalledOnce();
     expect(await runHook({ ...event, hook_event_name: 'SessionStart', source: 'compact' }, options)).toEqual({});
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('skips OpenRouter when its configured key is in the transcript', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'jev-test-'));
+  try {
+    const transcript = join(directory, 'rollout.jsonl');
+    const apiKey = 'synthetic-key-in-a-prompt';
+    await writeFile(transcript, [...records, message(apiKey)].map((record) => JSON.stringify(record)).join('\n'));
+    const fetcher = vi.fn<typeof fetch>();
+    await runHook({ session_id: 'fake-session', transcript_path: transcript, hook_event_name: 'PreCompact' }, {
+      cache: join(directory, 'cache'),
+      apiKey,
+      fetcher,
+    });
+    expect(fetcher).not.toHaveBeenCalled();
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
