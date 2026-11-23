@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "matcher": "^(manual|auto)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/ABSOLUTE/PATH/TO/fast-jev-compaction-openrouter/codex/hook.mjs\"",
+            "timeout": 20,
+            "statusMessage": "Selecting tool evidence with Jev"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "^compact$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/ABSOLUTE/PATH/TO/fast-jev-compaction-openrouter/codex/hook.mjs\"",
+            "timeout": 5,
+            "additionalContextLimit": 15000
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -246,3 +246,8 @@ demo/JevDemo/build.sh   # builds demo/JevDemo/build/JevDemo.app and launches it
 ```
 
 Press space in the app to replay from the start.
+
+## Codex integration
+
+See the [Codex adapter setup](codex/README.md) for OpenRouter-backed tool evidence
+restoration around native Codex compaction.
